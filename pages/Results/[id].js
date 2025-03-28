@@ -1,135 +1,104 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import { db } from '../../lib/firebase';
-import {
-  doc,
-  getDoc,
-  collection,
-  getDocs
-} from 'firebase/firestore';
-import { format, parseISO } from 'date-fns';
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { format, parseISO } from "date-fns";
+import WhatsAppShareButton from "@/components/WhatsAppShareButton";
 
 export default function ResultsPage() {
   const router = useRouter();
   const { id } = router.query;
 
   const [poll, setPoll] = useState(null);
-  const [votes, setVotes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [reveal, setReveal] = useState(false);
-  const [timerExpired, setTimerExpired] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
-    if (!id) return;
-
-    const fetchData = async () => {
-      const pollRef = doc(db, 'polls', id);
-      const pollSnap = await getDoc(pollRef);
-      if (!pollSnap.exists()) return;
-
-      const votesRef = collection(db, 'polls', id, 'votes');
-      const votesSnap = await getDocs(votesRef);
-
-      const voteData = votesSnap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      const pollData = { id: pollSnap.id, ...pollSnap.data() };
-      setPoll(pollData);
-      setVotes(voteData);
-
-      // Timer logic: 2 days from poll.createdAt
-      if (pollData.createdAt?.toDate) {
-        const created = pollData.createdAt.toDate().getTime();
-        const now = new Date().getTime();
-        const diffInMs = now - created;
-        const diffInHours = diffInMs / (1000 * 60 * 60);
-        if (diffInHours >= 48) {
-          setTimerExpired(true);
+    if (id) {
+      const fetchPoll = async () => {
+        const docRef = doc(db, "polls", id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setPoll(data);
+          handleCountdown(data.createdAt?.seconds);
         }
-      }
-
-      setLoading(false);
-    };
-
-    fetchData();
+      };
+      fetchPoll();
+    }
   }, [id]);
 
-  if (loading) return <p className="p-4">Loading...</p>;
-  if (!poll) return <p className="p-4">Poll not found</p>;
+  const handleCountdown = (createdAtSeconds) => {
+    const endTime = new Date((createdAtSeconds + 2 * 24 * 60 * 60) * 1000); // 2 days later
+    const interval = setInterval(() => {
+      const now = new Date();
+      const distance = endTime - now;
 
-  // Tally votes
-  const voteSummary = poll.dates.map((date) => {
-    const summary = { best: 0, maybe: 0, no: 0, date };
-    votes.forEach((v) => {
-      const response = v.votes[date];
-      if (response) summary[response]++;
+      if (distance <= 0) {
+        clearInterval(interval);
+        setShowResult(true);
+        setTimeLeft(null);
+      } else {
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+      }
+    }, 1000);
+  };
+
+  const findSuggestedDate = () => {
+    if (!poll || !poll.votes) return null;
+
+    const tally = {};
+    poll.votes.forEach((vote) => {
+      Object.entries(vote.dates || {}).forEach(([date, response]) => {
+        if (response === "yes") {
+          tally[date] = (tally[date] || 0) + 1;
+        }
+      });
     });
-    return summary;
-  });
 
-  const suggested = [...voteSummary].sort((a, b) => b.best - a.best)[0];
+    const sorted = Object.entries(tally).sort((a, b) => b[1] - a[1]);
+    return sorted.length > 0 ? sorted[0][0] : null;
+  };
+
+  const suggestedDate = findSuggestedDate();
 
   return (
-    <div className="max-w-xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-1">Suggested Evening Out Date</h1>
-      {poll.title && (
-        <p className="text-base text-gray-700 italic">Event: {poll.title}</p>
-      )}
-      {poll.location && (
-        <p className="text-base text-gray-500 mb-4">📍 Location: {poll.location}</p>
+    <div className="max-w-md mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-2 text-center">Suggested Evening Out Date</h1>
+
+      {poll?.location && (
+        <p className="text-center text-sm text-gray-600 mb-4">📍 {poll.location}</p>
       )}
 
-      {(timerExpired || reveal) ? (
-        <div className="bg-green-100 border border-green-300 p-4 rounded mb-6">
-          <strong>🎯 Suggested Date:</strong>
-          <div className="text-lg mt-1">
-            {format(parseISO(suggested.date), 'EEEE do MMMM yyyy')}
-            <span className="ml-2 text-sm text-gray-600">({suggested.best} Best votes)</span>
-          </div>
-        </div>
-      ) : (
-        <div
-          onClick={() => setReveal(true)}
-          className="bg-yellow-100 border border-yellow-300 p-4 rounded mb-6 cursor-pointer hover:bg-yellow-200 transition"
-        >
-          <strong>🎯 Suggested Date:</strong>
-          <div className="mt-1 text-gray-700">
-            Waiting for all votes to come in...<br />
-            <span className="italic">Tap to reveal if you want to see now!</span>
-          </div>
+      {!showResult && timeLeft && (
+        <div className="text-center mb-4">
+          <p className="text-gray-700 text-sm">⏳ Poll is still live</p>
+          <p className="font-semibold">{timeLeft} remaining</p>
+          <button
+            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded"
+            onClick={() => setShowResult(true)}
+          >
+            Tap to reveal early
+          </button>
         </div>
       )}
 
-      {voteSummary.map((summary) => (
-        <div key={summary.date} className="border p-3 rounded mb-3">
-          <div className="font-semibold mb-1">
-            {format(parseISO(summary.date), 'EEEE do MMMM yyyy')}
-          </div>
-          <div className="text-sm flex gap-6">
-            ✅ Best: {summary.best}
-            🤔 Maybe: {summary.maybe}
-            ❌ No: {summary.no}
-          </div>
+      {showResult && suggestedDate && (
+        <div className="text-center bg-green-100 border border-green-300 p-4 rounded mt-4">
+          <p className="text-sm text-gray-600 mb-1">Best date based on responses:</p>
+          <p className="text-xl font-semibold text-green-800">
+            {format(parseISO(suggestedDate), "EEEE do MMMM yyyy")}
+          </p>
         </div>
-      ))}
+      )}
 
-      <hr className="my-6" />
-
-      <h2 className="text-xl font-semibold mb-2">Who voted:</h2>
-      <ul className="space-y-1">
-        {votes.map((v) => (
-          <li key={v.id}>
-            <strong>{v.name}</strong> at{" "}
-            {v.createdAt?.toDate().toLocaleString()}
-          </li>
-        ))}
-      </ul>
+      <WhatsAppShareButton
+        url={typeof window !== "undefined" ? window.location.href : ""}
+        message="Check out the results for our drinks night!"
+      />
     </div>
   );
 }
-
-import WhatsAppShareButton from "@/components/WhatsAppShareButton";
-
-<WhatsAppShareButton />
