@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  reactStrictMode: true
+  reactStrictMode: true,
+  // Removed 'output: export' to enable full dynamic features
 }
 
 export default nextConfig;
