@@ -1,5 +1,3 @@
-// Temporary change to trigger git
-
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { db } from '../lib/firebase';

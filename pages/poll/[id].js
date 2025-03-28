@@ -9,13 +9,8 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { format, parseISO } from 'date-fns';
+import WhatsAppShareButton from "@/components/WhatsAppShareButton";
 
-import WhatsAppShareButton from '../../components/WhatsAppShareButton';
-
-<WhatsAppShareButton
-  url={typeof window !== 'undefined' ? window.location.href : ''}
-  message={`Vote for your best date for a night out 🍷`}
-/>
 
 export default function PollVotePage() {
   const router = useRouter();
@@ -59,7 +54,7 @@ export default function PollVotePage() {
     });
 
     alert('Vote submitted!');
-    router.push(`/results/${id}`);
+    router.push(`/results/${pollId}`);
   };
 
   if (loading) return <p className="p-4">Loading...</p>;
@@ -132,3 +127,8 @@ export default function PollVotePage() {
     </div>
   );
 }
+
+<WhatsAppShareButton
+  url={typeof window !== "undefined" ? window.location.href : ""}
+  message="Pick a date for drinks 🍻"
+/>
