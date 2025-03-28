@@ -4,12 +4,6 @@ import { db } from '../lib/firebase';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import DateSelector from '../components/DateSelector';
-import WhatsAppShareButton from '../components/WhatsAppShareButton';
-
-<WhatsAppShareButton
-  url={`https://plan.eveningout.social/poll/${pollId}`}
-  message={`Hey! Help choose a date for drinks 🍻`}
-/>
 
 export default function CreatePoll() {
   const [name, setName] = useState('');
@@ -58,4 +52,3 @@ export default function CreatePoll() {
     </div>
   );
 }
-
