@@ -1,88 +1,65 @@
-import { useState } from "react";
-import { db } from "../lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { useRouter } from "next/router";
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+import { db } from '../lib/firebase';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { format } from 'date-fns';
+import DateSelector from '../components/DateSelector';
+import WhatsAppShareButton from '../components/WhatsAppShareButton';
 
-export default function Home() {
-  const [hostName, setHostName] = useState("");
-  const [eventTitle, setEventTitle] = useState("");
-  const [location, setLocation] = useState("");
-  const [dates, setDates] = useState([""]);
+<WhatsAppShareButton
+  url={`https://plan.eveningout.social/poll/${pollId}`}
+  message={`Hey! Help choose a date for drinks 🍻`}
+/>
+
+export default function CreatePoll() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [title, setTitle] = useState('');
+  const [location, setLocation] = useState('');
+  const [preferredDate, setPreferredDate] = useState('');
+  const [selectedDates, setSelectedDates] = useState([]);
+
   const router = useRouter();
-
-  const handleDateChange = (index, value) => {
-    const newDates = [...dates];
-    newDates[index] = value;
-    setDates(newDates);
-  };
-
-  const addDateField = () => {
-    setDates([...dates, ""]);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const docRef = await addDoc(collection(db, "polls"), {
-      hostName,
-      eventTitle,
+
+    const docRef = await addDoc(collection(db, 'polls'), {
+      name,
+      email,
+      title,
       location,
-      dates,
-      createdAt: serverTimestamp(),
+      preferredDate,
+      dates: selectedDates.map(date => format(date, 'yyyy-MM-dd')),
+      createdAt: Timestamp.now()
     });
+
     router.push(`/poll/${docRef.id}`);
   };
 
   return (
-    <div className="min-h-screen p-6 bg-white text-black max-w-md mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Create a Drinks Poll 🍻</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          className="w-full border p-2 rounded"
-          placeholder="Your name"
-          value={hostName}
-          onChange={(e) => setHostName(e.target.value)}
-          required
-        />
-        <input
-          className="w-full border p-2 rounded"
-          placeholder="Event title"
-          value={eventTitle}
-          onChange={(e) => setEventTitle(e.target.value)}
-          required
-        />
-        <input
-          className="w-full border p-2 rounded"
-          placeholder="Location (optional)"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-        />
-        <div>
-          <label className="block font-medium mb-2">Add dates:</label>
-          {dates.map((date, index) => (
-            <input
-              key={index}
-              className="w-full border p-2 rounded mb-2"
-              type="date"
-              value={date}
-              onChange={(e) => handleDateChange(index, e.target.value)}
-              required
-            />
-          ))}
-          <button
-            type="button"
-            onClick={addDateField}
-            className="text-blue-600 mt-2"
-          >
-            + Add another date
-          </button>
-        </div>
-        <button
-          type="submit"
-          className="bg-black text-white px-4 py-2 rounded w-full"
-        >
-          Create Poll
-        </button>
+    <div className="max-w-md mx-auto p-4">
+      <h1 className="text-xl font-bold mb-4">Suggest dates for your Evening Out 🍸</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input className="w-full border p-2" type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} required />
+        <input className="w-full border p-2" type="email" placeholder="Your email (for updates)" value={email} onChange={e => setEmail(e.target.value)} />
+        <input className="w-full border p-2" type="text" placeholder="Event Title" value={title} onChange={e => setTitle(e.target.value)} required />
+        <input className="w-full border p-2" type="text" placeholder="Location" value={location} onChange={e => setLocation(e.target.value)} required />
+
+        <label className="block mt-4 font-semibold">Pick your dates:</label>
+        <DateSelector selectedDates={selectedDates} setSelectedDates={setSelectedDates} />
+
+        <label className="block mt-4 font-semibold">Organiser Preferred date (optional):</label>
+        <input className="w-full border p-2" type="date" value={preferredDate} onChange={e => setPreferredDate(e.target.value)} />
+
+        <button type="submit" className="w-full bg-black text-white py-2 mt-4">Create Poll</button>
       </form>
     </div>
   );
 }
+
+
+import WhatsAppShareButton from "@/components/WhatsAppShareButton";
+
+<WhatsAppShareButton />

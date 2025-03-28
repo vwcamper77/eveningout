@@ -129,3 +129,7 @@ export default function ResultsPage() {
     </div>
   );
 }
+
+import WhatsAppShareButton from "@/components/WhatsAppShareButton";
+
+<WhatsAppShareButton />

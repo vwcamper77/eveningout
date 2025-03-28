@@ -1,16 +1,19 @@
-import React from 'react';
+import React from "react";
 
-export default function WhatsAppShareButton({ url, message }) {
-  const shareLink = `https://wa.me/?text=${encodeURIComponent(message + '\n' + url)}`;
+export default function WhatsAppShareButton({ url }) {
+  const handleClick = () => {
+    const fullUrl = url || window.location.href;
+    const encodedUrl = encodeURIComponent(fullUrl);
+    const whatsappUrl = `https://wa.me/?text=${encodedUrl}`;
+    window.open(whatsappUrl, "_blank");
+  };
 
   return (
-    <a
-      href={shareLink}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-block bg-green-500 text-white px-4 py-2 rounded mt-4 hover:bg-green-600"
+    <button
+      onClick={handleClick}
+      className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
     >
-      Share via WhatsApp
-    </a>
+      Share on WhatsApp
+    </button>
   );
 }
