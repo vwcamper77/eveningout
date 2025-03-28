@@ -59,7 +59,3 @@ export default function CreatePoll() {
   );
 }
 
-
-import WhatsAppShareButton from "@/components/WhatsAppShareButton";
-
-<WhatsAppShareButton />
