@@ -1,27 +1,29 @@
-import { format, isFriday } from 'date-fns';
+// components/DateSelector.js
+import { format } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
 export default function DateSelector({ selectedDates, setSelectedDates }) {
+  const isFriday = (date) => date.getDay() === 5;
+
   return (
-    <div className="flex flex-col items-center mt-4">
+    <div className="text-center mt-4">
       <DayPicker
         mode="multiple"
         selected={selectedDates}
-        onSelect={(dates) => setSelectedDates(dates || [])}
+        onSelect={setSelectedDates}
         modifiers={{
-          friday: (date) => isFriday(date),
+          friday: isFriday
         }}
         modifiersClassNames={{
-          friday: 'text-blue-600 font-bold',
+          friday: 'text-blue-600 font-bold'
         }}
-        className="mx-auto"
       />
 
-      <div className="mt-6 text-center w-full">
-        <strong className="block mb-2">Selected dates:</strong>
-        <ul className="space-y-1">
-          {selectedDates.map((date, i) => (
+      <div className="mt-4 text-left">
+        <strong>Selected dates:</strong>
+        <ul className="list-disc pl-4">
+          {selectedDates?.map((date, i) => (
             <li key={i}>
               {format(date, 'EEEE do MMMM yyyy')}
             </li>

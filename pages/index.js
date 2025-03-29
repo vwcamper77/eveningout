@@ -4,51 +4,102 @@ import { db } from '../lib/firebase';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 import DateSelector from '../components/DateSelector';
+import MapboxAutocomplete from '../components/MapboxAutocomplete';
 
-export default function CreatePoll() {
-  const [name, setName] = useState('');
+export default function Home() {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [title, setTitle] = useState('');
-  const [location, setLocation] = useState('');
-  const [preferredDate, setPreferredDate] = useState('');
+  const [location, setLocation] = useState(''); // Location state
   const [selectedDates, setSelectedDates] = useState([]);
 
   const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const formattedDates = selectedDates.map(date => format(date, 'yyyy-MM-dd'));
 
+    // Save poll to Firestore
     const docRef = await addDoc(collection(db, 'polls'), {
-      name,
-      email,
+      organiserFirstName: firstName,
+      organiserLastName: lastName,
+      organiserEmail: email,
       title,
-      location,
-      preferredDate,
-      dates: selectedDates.map(date => format(date, 'yyyy-MM-dd')),
-      createdAt: Timestamp.now()
+      location, // Pass the selected location
+      dates: formattedDates,
+      createdAt: Timestamp.now(),
     });
 
+    // Redirect to the newly created poll
     router.push(`/poll/${docRef.id}`);
   };
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <h1 className="text-xl font-bold mb-4">Suggest dates for your Evening Out 🍸</h1>
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="max-w-md w-full p-6">
+        <h1 className="text-2xl font-bold mb-5 text-center">
+          🍸 Evening Out Planner 🍸
+        </h1>
 
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <input className="w-full border p-2" type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} required />
-        <input className="w-full border p-2" type="email" placeholder="Your email (for updates)" value={email} onChange={e => setEmail(e.target.value)} />
-        <input className="w-full border p-2" type="text" placeholder="Event Title" value={title} onChange={e => setTitle(e.target.value)} required />
-        <input className="w-full border p-2" type="text" placeholder="Location" value={location} onChange={e => setLocation(e.target.value)} required />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              className="w-1/2 border p-2 rounded"
+              placeholder="First name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              required
+            />
+            <input
+              type="text"
+              className="w-1/2 border p-2 rounded"
+              placeholder="Last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              required
+            />
+          </div>
 
-        <label className="block mt-4 font-semibold">Pick your dates:</label>
-        <DateSelector selectedDates={selectedDates} setSelectedDates={setSelectedDates} />
+          <input
+            type="email"
+            className="w-full border p-2 rounded"
+            placeholder="Your email (optional)"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-        <label className="block mt-4 font-semibold">Organiser Preferred date (optional):</label>
-        <input className="w-full border p-2" type="date" value={preferredDate} onChange={e => setPreferredDate(e.target.value)} />
+          <input
+            type="text"
+            className="w-full border p-2 rounded"
+            placeholder="Event Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
 
-        <button type="submit" className="w-full bg-black text-white py-2 mt-4">Create Poll</button>
-      </form>
+          {/* Location Picker */}
+          <MapboxAutocomplete setLocation={setLocation} />
+
+          <label className="block font-semibold mt-4 text-center">
+            Pick your dates:
+          </label>
+          <div className="flex justify-center">
+            <DateSelector
+              selectedDates={selectedDates}
+              setSelectedDates={setSelectedDates}
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-black text-white font-semibold py-2 mt-4 rounded"
+          >
+            Create Planner
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
